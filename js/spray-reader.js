@@ -13,10 +13,18 @@ SprayReader.prototype = {
   timers: [],
 
   setInput: function (input) {
-    this.input = input;
+    // Convert Markdown to HTML
+    var htmlInput = marked.parse(input);
+
+    // Extract text content from HTML
+    var tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlInput;
+    var textContent = tempDiv.textContent || tempDiv.innerText || '';
+
+    this.input = textContent; // Store the extracted text
 
     // Split on spaces
-    var allWords = input.split(/\s+/);
+    var allWords = this.input.split(/\s+/);
 
     var word = '';
     var result = '';
