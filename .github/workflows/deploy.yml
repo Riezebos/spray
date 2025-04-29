@@ -31,6 +31,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Clone vendor/headtts
+        uses: actions/checkout@v4
+        with:
+          repository: met4citizen/HeadTTS.git
+          path: vendor/headtts
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

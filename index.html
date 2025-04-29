@@ -6,8 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Open-source speed-reading tool, written in JavaScript">
-  <meta name="author" content="Chaim Peck">
-  <link rel="shortcut icon" href="favicon.png">
+  <meta name="author" content="Chaim Peck, Simon Riezebos">
 
   <title>MDSpray</title>
 
@@ -53,6 +52,7 @@
         ――――――――――――――――――――――
       </div>
     </div>
+    <p id="tts-status">Initializing TTS...</p>
   </div>
 
   <div class="container">
@@ -70,15 +70,15 @@
           </div>
         </div>
 
-        <!-- Slider for WPM -->
+        <!-- Slider for Speed -->
         <div class="form-group">
-          <label class="col-md-4 control-label" for="wpm">Set the Words-Per-Minute</label>
+          <label class="col-md-4 control-label" for="speed">Set the Audio Speed</label>
           <div class="col-md-4">
-            <input type="range" id="wpm" name="wpm" class="form-control-range" min="100" max="600" step="25"
-              value="400">
+            <input type="range" id="speed" name="speed" class="form-control-range" min="0.5" max="2.0" step="0.1"
+              value="1.0">
           </div>
           <div class="col-md-2">
-            <span id="wpm-value">400</span> wpm
+            Speed: <span id="speed-value">1.0</span>x
           </div>
         </div>
 
@@ -104,53 +104,59 @@
   <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
   <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/spray-reader.js"></script>
-  <script type="text/javascript">
-    var sprayReader = new SprayReader('#spray_result');
+  <script src="https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.2/dist/transformers.min.js"
+    type="module"></script>
+  <script src="vendor/headtts/headtts.mjs" type="module"></script>
+  <script type="module">
+    import { SprayReader } from './js/spray-reader.js';
 
     $(document).ready(function () {
-      // Update WPM display span when slider changes
-      $('#wpm').on('input change', function () {
-        $('#wpm-value').text($(this).val());
-      });
+      const sprayReader = new SprayReader('#spray_result');
+      const statusElement = $('#tts-status');
+
+      sprayReader.statusCallback = function (status) {
+        statusElement.text(status);
+      };
 
       $('#start').click(function (event) {
-        var inputText = $('#input-text').val();
-        var wpm = $('#wpm').val(); // Read from slider
+        event.preventDefault();
+        const inputText = $('#input-text').val();
 
         sprayReader.setInput(inputText);
-        sprayReader.setWpm(wpm);
         sprayReader.start();
-
-        event.preventDefault();
       });
 
       $('#pause').click(function (event) {
-        sprayReader.pause();
         event.preventDefault();
+        sprayReader.pause();
       });
 
       $('#stop').click(function (event) {
-        sprayReader.stop();
         event.preventDefault();
+        sprayReader.stop();
       });
 
-      // Add global key listener for spacebar pause/resume
       $(document).on('keydown', function (event) {
-        // Check if spacebar was pressed
         if (event.key === ' ' || event.keyCode === 32) {
-          // Check if the target is the input textarea
           if (event.target.id === 'input-text') {
-            return; // Allow spacebar in textarea
+            return;
           }
-
-          event.preventDefault(); // Prevent page scroll/default behavior only if not in textarea
+          event.preventDefault();
 
           if (sprayReader.isRunning) {
             sprayReader.pause();
           } else if (sprayReader.isPaused) {
-            sprayReader.start(); // This will now resume
+            sprayReader.start();
           }
+        }
+      });
+
+      // Update speed display span and set speed in SprayReader when slider changes
+      $('#speed').on('input change', function () {
+        const speedValue = parseFloat($(this).val()).toFixed(1);
+        $('#speed-value').text(speedValue);
+        if (sprayReader) {
+          sprayReader.setSpeed(parseFloat(speedValue));
         }
       });
     });
