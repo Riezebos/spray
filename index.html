@@ -70,17 +70,15 @@
           </div>
         </div>
 
-        <!-- Select Basic -->
+        <!-- Slider for WPM -->
         <div class="form-group">
           <label class="col-md-4 control-label" for="wpm">Set the Words-Per-Minute</label>
           <div class="col-md-4">
-            <select id="wpm" name="wpm" class="form-control">
-              <option value="100">100 wpm</option>
-              <option value="200">200 wpm</option>
-              <option value="300">300 wpm</option>
-              <option value="400">400 wpm</option>
-              <option value="500">500 wpm</option>
-            </select>
+            <input type="range" id="wpm" name="wpm" class="form-control-range" min="100" max="600" step="25"
+              value="400">
+          </div>
+          <div class="col-md-2">
+            <span id="wpm-value">400</span> wpm
           </div>
         </div>
 
@@ -111,9 +109,14 @@
     var sprayReader = new SprayReader('#spray_result');
 
     $(document).ready(function () {
+      // Update WPM display span when slider changes
+      $('#wpm').on('input change', function () {
+        $('#wpm-value').text($(this).val());
+      });
+
       $('#start').click(function (event) {
         var inputText = $('#input-text').val();
-        var wpm = $('#wpm').val();
+        var wpm = $('#wpm').val(); // Read from slider
 
         sprayReader.setInput(inputText);
         sprayReader.setWpm(wpm);
