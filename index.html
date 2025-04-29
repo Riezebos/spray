@@ -144,7 +144,12 @@
       $(document).on('keydown', function (event) {
         // Check if spacebar was pressed
         if (event.key === ' ' || event.keyCode === 32) {
-          event.preventDefault(); // Prevent page scroll
+          // Check if the target is the input textarea
+          if (event.target.id === 'input-text') {
+            return; // Allow spacebar in textarea
+          }
+
+          event.preventDefault(); // Prevent page scroll/default behavior only if not in textarea
 
           if (sprayReader.isRunning) {
             sprayReader.pause();

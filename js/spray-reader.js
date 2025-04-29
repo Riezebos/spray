@@ -16,13 +16,42 @@ SprayReader.prototype = {
     // Convert Markdown to HTML
     var htmlInput = marked.parse(input);
 
-    // Extract text content from HTML
+    // Create a temporary div to hold the parsed HTML
     var tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlInput;
-    var textContent = tempDiv.textContent || tempDiv.innerText || '';
 
-    this.input = textContent; // Store the extracted text
+    var processedWords = [];
 
+    // Function to recursively process nodes
+    function processNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        // Split text content into words and add
+        var textWords = node.textContent.split(/\s+/).filter(word => word.length > 0);
+        processedWords = processedWords.concat(textWords);
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        if (node.tagName === 'IMG') {
+          // Keep the image tag as a single "word"
+          // Add pauses before and after the image
+          processedWords.push(".");
+          processedWords.push(node.outerHTML); // Add the full <img> tag
+          processedWords.push(".");
+        } else {
+          // Recursively process child nodes for other elements (like P, H1, STRONG, EM, etc.)
+          node.childNodes.forEach(processNode);
+        }
+      }
+    }
+
+    // Start processing from the temporary div's children
+    tempDiv.childNodes.forEach(processNode);
+
+    // The original preprocessing logic (commas, long words, punctuation) might conflict
+    // or be redundant now. Let's simplify and use the processedWords directly for now.
+    // We can revisit the preprocessing logic if needed.
+    this.words = processedWords;
+
+    // NOTE: The old preprocessing logic is removed/commented out below
+    /*
     // Split on spaces
     var allWords = this.input.split(/\s+/);
 
@@ -61,6 +90,8 @@ SprayReader.prototype = {
     }
 
     this.words = tmpWords.slice(0);
+    */
+
     this.wordIdx = 0;
     this.isPaused = false; // Reset pause state on new input
   },
@@ -125,12 +156,19 @@ SprayReader.prototype = {
   },
 
   displayWordAndIncrement: function () {
-    var pivotedWord = pivot(this.words[this.wordIdx]);
+    var currentItem = this.words[this.wordIdx];
 
-    this.container.html(pivotedWord);
+    // Check if the current item is an image tag
+    if (typeof currentItem === 'string' && currentItem.trim().startsWith('<img')) {
+      this.container.html(currentItem); // Display the image HTML directly
+    } else {
+      // Otherwise, process as a normal word
+      var pivotedWord = pivot(currentItem);
+      this.container.html(pivotedWord);
+    }
 
     this.wordIdx++;
-    if (thisObj.wordIdx >= thisObj.words.length) {
+    if (this.wordIdx >= this.words.length) { // Use this.wordIdx and this.words
       this.wordIdx = 0;
       this.stop();
       if (typeof (this.afterDoneCallback) === 'function') {
